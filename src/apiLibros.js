@@ -21,131 +21,160 @@ app.get('/listar-libros', (req, res) => {
 });
 
 //2) Get que devuelva 1 elemento por id.
-app.get('/libros/:id', (req, res) => {
-    const id = req.params.id; //variable que recibe el id
+app.get('/buscar-libro', (req, res) => {
+    const {id} = req.query;
 
-    //se busca el libro que coincida con el id recibido
+    //validar que se envió el id
+    if (!id) {
+        return res.status(400).json({ error: "Debe ingresar un id" });
+    }
+
+    //validar que el id sea un número
+    if (isNaN(id)) {
+        return res.status(400).json({ error: "El id debe ser un número" });
+    }
+
     const libro = libros.find(libro => libro.id === parseInt(id));
 
     if (!libro) {
-        return res.status(404).json("El id ingresado no concide con ningún libro");
+        return res.status(404).json({ error: "No se encontró ningún libro con ese id" });
     }
 
     res.json(libro);
 });
 
 //3) Get que deuelva 1 elemento por atributo obligatorio, como el nombre.
-app.get('/libros/titulo/:titulo', (req, res) => {
-    const titulo = req.params.titulo; //variable que recibe el titulo
-    
-    //se busca el libro que conincida que el título recibido por parametros
+app.get('/buscar-libro-titulo', (req, res) => {
+    const {titulo} = req.query;
+
+    //validar que se envió el título
+    if (!titulo) {
+        return res.status(400).json({ error: "Debe ingresar un título" });
+    }
+
+    //verificar que se encontró un libro con el título ingresado
     const libro = libros.find(libro => libro.titulo.toLowerCase() === titulo.toLowerCase());
 
     if (!libro) {
-        return res.status(404).json("El título ingresado no coincide con ningún libro");
+        return res.status(404).json({ error: "No se encontró ningún libro con ese título" });
     }
 
-    res.json(libro);
+    res.json({ mensaje: "Libro encontrado", datos: libro });
 });
 
-//-------------- POSTS --------------
+//-------------- POST --------------
 
+app.post('/crear-libro', (req, res) => {
+    const { titulo, autor, anio, genero } = req.body;
 
-//POST va a recibir datos nuevos y los va a agregar dentro del sistema
-app.post('/registrar-usuario', (req, res) => {
-
-    const nombre = req.body.nombre; //guardo lo que el usuario envió para hacer verificaciones
-
-    //Verificar si se envió algo
-    if (!nombre) {
-        return res.status(400).json({ //400 indica un error de que no senvió el dato que se esperaba.
-            error: 'Debe ingresar un nombre'
-        });
+    //validar campos obligatorios con operadores OR
+    if (!titulo || !autor || !anio || !genero) {
+        return res.status(400).json({ error: "Todos los campos son obligatorios: titulo, autor, anio, genero" });
     }
 
-    //Verificar que el nombre no exista
-    const usuarioExistente = usuarios.find(
-        usuario => usuario.nombre.toLowerCase() === nombre.toLowerCase()
-    );
-
-    if (usuarioExistente) {
-        return res.status(409).json({ //409 indica conflictos, en este caso el conflicto es el usuario duplicado.
-            error: 'El usuario ya existe'
-        });
+    //validar que el año sea un número
+    if (isNaN(anio)) {
+        return res.status(400).json({ error: "El año ingresado debe ser un número" });
     }
 
+    //validar que el año del libro sea 'razonable'
+    if (anio < 1000 || anio > new Date().getFullYear()) {
+        return res.status(400).json({ error: `El año debe estar entre 1000 y ${new Date().getFullYear()}` });
+    }
 
-    const nuevoUsuario = {
-        id: usuarios.length + 1, //id autoincremental
-        nombre: req.body.nombre //nombre que el cliente o nosotros debemos escribir en la petición
+    //evitar crear un libro duplicado (por título)
+    const duplicado = libros.find(libro => libro.titulo.toLowerCase() === titulo.toLowerCase());
+    if (duplicado) {
+        return res.status(400).json({ error: "Ya existe un libro con ese título" });
+    }
+
+    //crear el nuevo libro
+    const nuevoLibro = {
+        id: libros.length + 1,
+        titulo,
+        autor,
+        anio: parseInt(anio),
+        genero
     };
 
-    usuarios.push(nuevoUsuario); 
-    res.status(201).json(nuevoUsuario); //201 indica que se creó un nuevo recurso
+    //se agrega el libro con push, porque find le pasó a libros una referencia hacia el array original
+    libros.push(nuevoLibro);
+
+    res.status(201).json({ mensaje: "Libro creado correctamente", datos: nuevoLibro });
 });
 
-//----
-//DELETE elimina algo del servidor
-app.delete('/borrar-usuario', (req, res) => {
+//-------------- DELETE --------------
 
-    const id = req.body.id; //obtengo el id que el cliente tuvo que haber enviado
-    const iD = parseInt(id);
+app.delete('/eliminar-libro', (req, res) => {
+    const {id} = req.query;
 
-    const usuario = usuarios.find(usuario => usuario.id === iD); //busco el usuario en mi lista
-
-    //Verificar si existe el usuario
-    if (!usuario) {
-        return res.status(404).json({ //404 indica que no se encontró el recurso que se solicitó
-            error: 'Usuario no encontrado'
-        });
+    //validar que se envió el id
+    if (!id) {
+        return res.status(400).json({ error: "Debe ingresar un id" });
     }
 
-    // Obtener posición del usuario
-    const indice = usuarios.findIndex(usuario => usuario.id === iD);
+    //validar que el id sea un número
+    if (isNaN(id)) {
+        return res.status(400).json({ error: "El id debe ser un número" });
+    }
 
-    // Eliminar usuario
-    usuarios.splice(indice, 1); //'indice' inicio del borrado y '1' la cantidad que cosas que voy a borrar
-    res.json({mensaje: 'Usuario eliminado correctamente'});
+    //buscar el libro a eliminar (por id)
+    const libro = libros.find(libro => libro.id === parseInt(id));
 
+    if (!libro) {
+        return res.status(404).json({ error: "No se encontró ningún libro con ese id" });
+    }
+
+    //Eliminar el libro
+    const index = libros.indexOf(libro); //se busca el índice del libro a eliminar1
+    libros.splice(index, 1); //se elimina el libro indicando el índica y la cantidad de elementos a borrar (indice/cantidad)
+
+    res.json({ mensaje: "El libro eliminado correctamente" });
 });
 
-app.patch('/editar-usuario', (req, res) => {
+//-------------- PATCH --------------
 
-    //Verificar si existe un usuario con el id recibido
-    const id = req.body.id;
-    const iD = parseInt(id);
+app.patch('/editar-libro', (req, res) => {
+    const {id} = req.query;
+    const {titulo, autor, anio, genero} = req.body;
 
-    const usuario = usuarios.find(usuario => usuario.id === iD);
-
-    if (!usuario) {
-        return res.status(404).json({ //404 indica que no se encontró el recurso que se solicitó
-            error: 'Usuario no encontrado'
-        });
+    //validar que se envió el id
+    if (!id) {
+        return res.status(400).json({ error: "Debe ingresar un id" });
     }
 
-    const nuevoNombre = req.body.nombre;
-    const existeUsuario = usuarios.find(usuario => usuario.nombre.toLowerCase() === nuevoNombre.toLowerCase());
-
-    if (!nuevoNombre) { //Verifiicar que haya enviado un nombre nuevo
-        return res.status(400).json({ //400 indica que el cliente no envió el dato que se esperaba
-            error: 'Debe ingresar algún nombre'
-        })
-    } else if (nuevoNombre.toLowerCase() === usuario.nombre.toLowerCase()) { //Verificar si el nombre nuevo es el mismo que el actual
-        return res.status(400).json({ //400 indica que el cliente no envió el dato que se esperaba, en este caso el dato es un nombre diferente al actual
-            error: 'El nombre ingresa es el mismo'
-        });
-    }else if (existeUsuario) { //Verificar si existe otro usuario con el mismo nombre
-        return res.status(409).json({ //409 indica que hay un conflicto
-            error: 'El nombre ingresado ya existe'
-        });
+    //validar que el id sea un número
+    if (isNaN(id)) {
+        return res.status(400).json({ error: "El id ingresado debe ser un número" });
     }
 
-    //Actualizar el nombre del usuario
-    usuario.nombre = nuevoNombre;
-    res.json({mensaje: 'Usuario actualizado correctamente'});
+    //buscar el libro (por id)
+    const libro = libros.find(libro => libro.id === parseInt(id));
+
+    if (!libro) {
+        return res.status(404).json({ error: "No se encontró ningún libro con ese id" });
+    }
+
+    //validar año (si es que se envió)
+    if (anio) {
+        if (isNaN(anio)) { //se valida el tipo de dato
+            return res.status(400).json({ error: "El año ingresado debe ser un número" });
+        }
+        if (anio < 1000 || anio > new Date().getFullYear()) { //se valida la fecha ingresada
+            return res.status(400).json({ error: `El año debe estar entre 1000 y ${new Date().getFullYear()}` });
+        }
+    }
+
+    // Actualizar solo los campos enviados (solo si el cliente envió un nuevo valor)
+    if (titulo) libro.titulo = titulo;
+    if (autor) libro.autor = autor;
+    if (anio) libro.anio = parseInt(anio);
+    if (genero) libro.genero = genero;
+
+    res.json({ mensaje: "Libro actualizado correctamente", datos: libro });
 });
 
 // Configuración del servidor 
 app.listen(3000, () => { 
-    console.log('Servidor escuchando en el puerto 3000'); 
+    console.log('Servidor escuchando en el puerto 3000. http://localhost:3000'); 
 });
