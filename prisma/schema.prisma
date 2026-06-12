@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"//npx prisma migrate dev --name el_nombre_que_quiera
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+//TABLAS
+
+model User {
+  id                Int       @id @default(autoincrement())
+  nombre            String
+  usuario           String    @unique
+  email             String    @unique
+  password          String
+  imagenPerfil      String?
+  telefono          String
+  fechaNacimiento   DateTime
+  creadoEn          DateTime  @default(now())
+
+  idRol             Int
+  rol               Role      @relation(fields: [idRol], references: [id])
+
+  empleado          Employee?
+  tareas            Task[]
+}
+
+model Role {
+  id                Int       @id @default(autoincrement())
+  descripcion       String    @unique
+
+  usuarios          User[]
+}
+
+model Employee {
+  id                Int       @id @default(autoincrement())
+  fechaIngreso      DateTime  @default(now())
+  skills            String?
+  estadoLaboral     String
+
+  idVehiculo        Int
+  vehiculo          Vehicle   @relation(fields: [idVehiculo], references: [id])
+
+  idUsuario         Int       @unique
+  usuario           User      @relation(fields: [idUsuario], references: [id])
+}
+
+model Task {
+  id                Int       @id @default(autoincrement())
+  nombre            String
+  descripcion       String
+  servicio          String
+  prioridad         String?
+  estado            String
+  fechaCreacion     DateTime  @default(now())
+  fechaFin          DateTime
+
+  idUser            Int
+  user              User      @relation(fields: [idUser], references: [id])
+}
+
+model Vehicle {
+  id                Int            @id @default(autoincrement())
+  patente           String         @unique
+  color             String
+  descripcion       String
+  estado            String
+
+  idModelo          Int
+  modelo            VehicleModel   @relation(fields: [idModelo], references: [id])
+
+  empleados         Employee[]
+}
+
+model VehicleModel {
+  id                Int         @id @default(autoincrement())
+  descripcion       String
+
+  idMarca           Int
+  marca             Brand       @relation(fields: [idMarca], references: [id])
+
+  vehiculos         Vehicle[]
+}
+
+model Brand {
+  id                Int            @id @default(autoincrement())
+  descripcion       String
+
+  modelos           VehicleModel[]
+}
+
+//RELACIONES
+/*
+- User n...1 Role
+- Role 1...n User
+*/
+
+//comando para migrar
+//npx prisma migrate dev --name el_nombre_que_quiera_para_describir_la_migracion
