@@ -1,20 +1,62 @@
+import { useState } from "react";
+import { loginScheme } from "../schemes/loginScheme";
+import { useAuth } from "../hooks/useAuth";
+
 function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const { login, loading, error } = useAuth();
+
+  function handleChange(e) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setFieldErrors({});
+
+    try {
+      await loginScheme.validate(form, { abortEarly: false });
+    } catch (validationError) {
+      const errors = {};
+      validationError.inner.forEach((err) => {
+        errors[err.path] = err.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
+
+    try {
+      await login(form);
+      // acá podés redirigir, por ejemplo con react-router:
+      // navigate("/");
+    } catch {
+      // el mensaje de error ya queda en "error" (del hook useAuth)
+    }
+  }
+
   return (
     <div>
       <h1>Iniciar Sesión</h1>
 
-      <form>
+      <form onSubmit={handleSubmit}>
         <div>
           <label>Email:</label>
-          <input type="email" />
+          <input type="email" name="email" value={form.email} onChange={handleChange} />
+          {fieldErrors.email && <p style={{ color: "red" }}>{fieldErrors.email}</p>}
         </div>
 
         <div>
           <label>Contraseña:</label>
-          <input type="password" />
+          <input type="password" name="password" value={form.password} onChange={handleChange} />
+          {fieldErrors.password && <p style={{ color: "red" }}>{fieldErrors.password}</p>}
         </div>
 
-        <button type="submit">Iniciar Sesión</button>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Ingresando..." : "Iniciar Sesión"}
+        </button>
       </form>
     </div>
   );
