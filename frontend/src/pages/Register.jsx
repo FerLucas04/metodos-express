@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "../../../components/Button";
-import { registerScheme } from "../schemes/registerScheme";
-import { useAuth } from "../hooks/useAuth";
+import Button from "../components/Button";
+import { registerScheme } from "../modules/auth/schemes/registerScheme";
+import { useAuth } from "../modules/auth/hooks/useAuth";
 
 export default function RegisterForm() {
   const [form, setForm] = useState({

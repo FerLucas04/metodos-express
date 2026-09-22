@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { loginScheme } from "../schemes/loginScheme";
-import { useAuth } from "../hooks/useAuth";
+import { loginScheme } from "../modules/auth/schemes/loginScheme";
+import { useAuth } from "../modules/auth/hooks/useAuth";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
