@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { loginScheme } from "../modules/auth/schemes/loginScheme";
 import { useAuth } from "../modules/auth/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const { login, loading, error } = useAuth();
+  const navigate = useNavigate();
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -28,8 +30,7 @@ function Login() {
 
     try {
       await login(form);
-      // acá podés redirigir, por ejemplo con react-router:
-      // navigate("/");
+      navigate("/users", { replace: true });
     } catch {
       // el mensaje de error ya queda en "error" (del hook useAuth)
     }

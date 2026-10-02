@@ -1,34 +1,31 @@
+import { useEffect, useState } from "react";
+import api from "../api/api";
 import UserList from "../components/UserList";
 
-
 function Users() {
-  const users = [
-    {
-      id: 1,
-      name: "Juan Pérez",
-      email: "juan@email.com",
-      estado: false,
-    },
-    {
-      id: 2,
-      name: "María Gómez",
-      email: "maria@email.com",
-      estado: true,
-    },
-    {
-      id: 3,
-      name: "Carlos López",
-      email: "carlos@email.com",
-      estado: true,
-    },
-    {
-      id: 4,
-      name: "Ana Fernández",
-      email: "ana@email.com",
-      estado: false,
-    },
-  ];
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadUsers() {
+      try {
+        const { data } = await api.get("/", { signal: controller.signal });
+        setUsers(data);
+      } catch (requestError) {
+        if (!controller.signal.aborted) {
+          setError(requestError.response?.data?.message || "No se pudo cargar la lista de usuarios.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    loadUsers();
+    return () => controller.abort();
+  }, []);
 
   return (
     <div
@@ -40,8 +37,9 @@ function Users() {
       }}
     >
       <h1>Users</h1>
-      <p>Listado estático de usuarios.</p>
-
+      {loading && <p>Cargando usuarios...</p>}
+      {error && <p role="alert">{error}</p>}
+      {!loading && !error && users.length === 0 && <p>No hay usuarios registrados.</p>}
 
       <div
         style={{
@@ -51,9 +49,7 @@ function Users() {
           marginTop: "30px",
         }}
       >
-        {users.map((user) => (
-          <UserList key={user.id} user={user}/>
-        ))}
+        {!loading && !error && users.map((user) => <UserList key={user.id} user={user} />)}
       </div>
     </div>
   );

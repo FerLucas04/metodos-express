@@ -28,13 +28,11 @@ export function useAuth() {
     setError(null);
     try {
       const { data } = await api.post("/login", { email, password });
-      // Si el backend devuelve un token, lo guardamos para usarlo después.
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
+      if (!data?.token) throw new Error("La API no devolvió un token de sesión");
+      localStorage.setItem("token", data.token);
       return data;
     } catch (err) {
-      const message = err.response?.data?.message || "Email o contraseña incorrectos";
+      const message = err.response?.data?.message || err.message || "Email o contraseña incorrectos";
       setError(message);
       throw err;
     } finally {

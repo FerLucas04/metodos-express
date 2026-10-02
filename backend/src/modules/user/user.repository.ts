@@ -11,3 +11,6 @@ export const findByEmail = async (email: string) =>
 
 export const createUser = async (data: Partial<User>) =>
   repo().save(repo().create(data));
+
+export const findAll = async () =>
+  repo().find({ order: { id: "ASC" } });
