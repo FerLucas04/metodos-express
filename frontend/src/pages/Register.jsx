@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../components/Button";
 import { registerScheme } from "../modules/auth/schemes/registerScheme";
 import { useAuth } from "../modules/auth/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterForm() {
   const [form, setForm] = useState({
@@ -13,7 +14,9 @@ export default function RegisterForm() {
 
   // Errores por campo, para mostrar el mensaje de yup debajo de cada input.
   const [fieldErrors, setFieldErrors] = useState({});
-  const { register, loading, error } = useAuth();
+  const { register, loading, error } = useAuth(); //obtengo los estados y funciones del hook useAuth
+  
+  const navigate = useNavigate(); //manejador de navegación
 
   function handleChange(e) {
     setForm((prev) => ({
@@ -40,7 +43,8 @@ export default function RegisterForm() {
 
     try {
       await register(form);
-      // acá podés redirigir a login o al home, por ejemplo con react-router
+      console.log("El usuario fue registrado correctamente.")
+      navigate("/"); //home
     } catch {
       // el mensaje general de error ya queda en "error" (del hook useAuth)
     }
